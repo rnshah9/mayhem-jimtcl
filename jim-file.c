@@ -978,6 +978,7 @@ static const jim_subcmd_type file_command_table[] = {
         file_cmd_delete,
         1,
         -1,
+        JIM_MODFLAG_NOTAINT,
         /* Description: Deletes the files or directories (must be empty unless -force) */
     },
     {   "mkdir",
@@ -985,6 +986,7 @@ static const jim_subcmd_type file_command_table[] = {
         file_cmd_mkdir,
         1,
         -1,
+        JIM_MODFLAG_NOTAINT,
         /* Description: Creates the directories */
     },
     {   "tempfile",
@@ -992,6 +994,7 @@ static const jim_subcmd_type file_command_table[] = {
         file_cmd_tempfile,
         0,
         1,
+        JIM_MODFLAG_NOTAINT,
         /* Description: Creates a temporary filename */
     },
     {   "rename",
@@ -999,6 +1002,7 @@ static const jim_subcmd_type file_command_table[] = {
         file_cmd_rename,
         2,
         3,
+        JIM_MODFLAG_NOTAINT,
         /* Description: Renames a file */
     },
 #if defined(HAVE_LINK) && defined(HAVE_SYMLINK)
@@ -1078,6 +1082,11 @@ static const jim_subcmd_type file_command_table[] = {
 static int Jim_CdCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
     const char *path;
+
+    if (Jim_CheckTaint(interp, JIM_TAINT_ANY)) {
+        Jim_SetTaintError(interp, 1, argv);
+        return JIM_ERR;
+    }
 
     if (argc != 2) {
         Jim_WrongNumArgs(interp, 1, argv, "dirname");

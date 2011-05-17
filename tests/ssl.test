@@ -26,6 +26,10 @@ if {[os.fork] == 0} {
 			incr ssldone
 			$c close
 		} else {
+			# We don't mind sending tainted data back to it's source
+			catch {
+				untaint buf
+			}
 			$c puts -nonewline $buf
 		}
 	}

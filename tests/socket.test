@@ -129,6 +129,11 @@ test socket-1.6 {pipe} -body {
 
 test socket-1.7 {socketpair} -body {
 	lassign [socket pair] s1 s2
+	# We trust the data received on these sockets
+	if {[exists -command taint]} {
+		$s1 taint source 0
+		$s2 taint source 0
+	}
 	stdout flush
 	if {[os.fork] == 0} {
 		$s1 close
@@ -338,6 +343,7 @@ set s [socket stream.server 0]
 if {[os.fork] == 0} {
 	# child
 	set c [socket stream [socket-connect-addr $s]]
+
 	# Note: We have to disable buffering here, otherwise
 	# when we read data in $c readable {} we many leave buffered
 	# data and readable won't retrigger.
@@ -351,6 +357,10 @@ if {[os.fork] == 0} {
 			incr readdone
 			$c close
 		} else {
+			# It is safe to send this back to where it came from
+			if {[exists -command untaint]} {
+				untaint buf
+			}
 			$c puts -nonewline $buf
 		}
 	}
