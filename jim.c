@@ -5026,15 +5026,15 @@ static int JimDeleteLocalProcs(Jim_Interp *interp, Jim_Stack *localCommands)
 }
 
 /**
- * Run any onleave scripts for the current call frame.
+ * Run any $jim::defer scripts for the current call frame.
  *
  * retcode is the return code from the current proc.
  *
  * Returns the new return code.
  */
-static int JimInvokeOnleave(Jim_Interp *interp, int retcode)
+static int JimInvokeDefer(Jim_Interp *interp, int retcode)
 {
-    Jim_Obj *objPtr = Jim_GetVariableStr(interp, "onleave", JIM_NONE);
+    Jim_Obj *objPtr = Jim_GetVariableStr(interp, "jim::defer", JIM_NONE);
     int ret = JIM_OK;
 
     if (objPtr) {
@@ -5051,9 +5051,10 @@ static int JimInvokeOnleave(Jim_Interp *interp, int retcode)
         Jim_IncrRefCount(resultObjPtr);
         Jim_SetEmptyResult(interp);
 
-        for (i = 0; i < listLen; i++) {
-            /* If an onleave script returns an error, don't evaluate remaining scripts */
-            Jim_Obj *scriptObjPtr = Jim_ListGetIndex(interp, objPtr, i);
+        /* Invoke in reverse order */
+        for (i = listLen; i > 0; i--) {
+            /* If a defer script returns an error, don't evaluate remaining scripts */
+            Jim_Obj *scriptObjPtr = Jim_ListGetIndex(interp, objPtr, i - 1);
             ret = Jim_EvalObj(interp, scriptObjPtr);
             if (ret != JIM_OK) {
                 break;
@@ -5061,7 +5062,7 @@ static int JimInvokeOnleave(Jim_Interp *interp, int retcode)
         }
 
         if (ret == JIM_OK || retcode == JIM_ERR) {
-            /* onleave had no error, or proc had an error so restore proc result */
+            /* defer script had no error, or proc had an error so restore proc result */
             Jim_SetResult(interp, resultObjPtr);
         }
         else {
@@ -5594,7 +5595,7 @@ void Jim_FreeInterp(Jim_Interp *i)
     /* Free the active call frames list - must be done before i->commands is destroyed */
     for (cf = i->framePtr; cf; cf = cfx) {
         /* Note that we ignore any errors */
-        JimInvokeOnleave(i, JIM_OK);
+        JimInvokeDefer(i, JIM_OK);
         cfx = cf->parent;
         JimFreeCallFrame(i, cf, JIM_FCF_FULL);
     }
@@ -10756,8 +10757,7 @@ int Jim_EvalNamespace(Jim_Interp *interp, Jim_Obj *scriptObj, Jim_Obj *nsObj)
         retcode = Jim_EvalObj(interp, scriptObj);
     }
 
-    /* Invoke $onleave then destroy the callframe */
-    retcode = JimInvokeOnleave(interp, retcode);
+    /* Destroy the callframe */
     interp->framePtr = interp->framePtr->parent;
     JimFreeCallFrame(interp, callFramePtr, JIM_FCF_REUSE);
 
@@ -10861,8 +10861,8 @@ static int JimCallProcedure(Jim_Interp *interp, Jim_Cmd *cmd, int argc, Jim_Obj 
 
 badargset:
 
-    /* Invoke $onleave then destroy the callframe */
-    retcode = JimInvokeOnleave(interp, retcode);
+    /* Invoke $jim::defer then destroy the callframe */
+    retcode = JimInvokeDefer(interp, retcode);
     interp->framePtr = interp->framePtr->parent;
     JimFreeCallFrame(interp, callFramePtr, JIM_FCF_REUSE);
 

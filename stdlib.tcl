@@ -66,10 +66,10 @@ proc stackdump {stacktrace} {
 	join $lines \n
 }
 
-# Add the given script to $onleave, to be evaluated when the current
+# Add the given script to $jim::defer, to be evaluated when the current
 # procedure exits
-proc onleave {script} {
-	upvar onleave v
+proc defer {script} {
+	upvar jim::defer v
 	lappend v $script
 }
 
