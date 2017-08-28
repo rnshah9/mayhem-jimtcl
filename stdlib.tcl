@@ -66,6 +66,13 @@ proc stackdump {stacktrace} {
 	join $lines \n
 }
 
+# Add the given script to $onleave, to be evaluated when the current
+# procedure exits
+proc onleave {script} {
+	upvar onleave v
+	lappend v $script
+}
+
 # Sort of replacement for $::errorInfo
 # Usage: errorInfo error ?stacktrace?
 proc errorInfo {msg {stacktrace ""}} {

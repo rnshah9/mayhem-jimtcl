@@ -1,0 +1,227 @@
+# vim:se syntax=tcl:
+
+source [file dirname [info script]]/testing.tcl
+
+needs cmd onleave
+needs cmd interp
+
+testConstraint namespace [expr {[info commands namespace] ne ""}]
+
+test onleave-1.1 {onleave in proc} {
+	set x 1
+	set y 1
+	proc a {} {
+		set x 10
+		# This does nothing since it increments a local variable
+		onleave {incr x}
+		# This increments the global variable
+		onleave {incr ::y}
+		# Will return 10, not 11 since return happens before onleave triggers
+		return $x
+	}
+	list [a] $x $y
+} {10 1 2}
+
+test onleave-1.2 {set $onleave directly} {
+	set x 1
+	set y 1
+	proc a {} {
+		lappend onleave "incr ::x 2"
+		lappend onleave "incr ::y"
+		return $onleave
+	}
+	list [a] $x $y
+} {{{incr ::x 2} {incr ::y}} 3 2}
+
+test onleave-1.3 {unset $onleave} {
+	set x 1
+	set y 1
+	proc a {} {
+		onleave "incr x"
+		# unset, to remove all onleave actions
+		unset onleave
+	}
+	a
+	list $x $y
+} {1 1}
+
+test onleave-1.4 {error in onleave - error} {
+	set x 1
+	proc a {} {
+		# First onleave script will happen
+		onleave {incr ::x}
+		# Error ignored because of error from proc
+		onleave {blah}
+		# Last onleave script will not happen
+		onleave {incr ::y}
+		# This error will take precedence over the error from onleave
+		error "from a"
+	}
+	set rc [catch {a} msg]
+	list [info ret $rc] $msg $x
+} {error {from a} 2}
+
+test onleave-1.5 {error in onleave - return} {
+	set x 1
+	proc a {} {
+		# First onleave script will happen
+		onleave {incr ::x}
+		onleave {blah}
+		# Last onleave script will not happen
+		onleave {incr ::y}
+		return 3
+	}
+	set rc [catch {a} msg]
+	list [info ret $rc] $msg $x
+} {error {invalid command name "blah"} 2}
+
+test onleave-1.6 {error in onleave - ok} {
+	set x 1
+	proc a {} {
+		# First onleave script will happen
+		onleave {incr ::x}
+		# Error ignored because of error from proc
+		onleave {blah}
+		# Last onleave script will not happen
+		onleave {incr ::y}
+	}
+	set rc [catch {a} msg]
+	list [info ret $rc] $msg $x
+} {error {invalid command name "blah"} 2}
+
+test onleave-1.7 {error in onleave - break} {
+	set x 1
+	proc a {} {
+		# First onleave script will happen
+		onleave {incr ::x}
+		# This non-zero return code will take precedence over the proc return
+		onleave {return -code 30 ret30}
+		# Last onleave script will not happen
+		onleave {incr ::y}
+
+		return -code 20 ret20
+	}
+	set rc [catch {a} msg]
+	list [info ret $rc] $msg $x
+} {30 ret30 2}
+
+test onleave-1.8 {error in onleave - tailcall} {
+	set x 1
+	proc a {} {
+		# This will prevent tailcall from happening
+		onleave {blah}
+
+		# Tailcall will not happen because of error in onleave
+		tailcall incr ::x
+	}
+	set rc [catch {a} msg]
+	list [info ret $rc] $msg $x
+} {error {invalid command name "blah"} 1}
+
+test onleave-1.9 {Add to onleave in onleave body} {
+	set x 1
+	proc a {} {
+		onleave {
+			# Add to onleave in onleave
+			onleave {
+				# This will do nothing
+				error here
+			}
+		}
+		onleave {incr ::x}
+	}
+	a
+	set x
+} {2}
+
+test onleave-1.10 {Unset onleave in onleave body} {
+	set x 1
+	proc a {} {
+		onleave {
+			# This will do nothing
+			unset -nocomplain onleave
+		}
+		onleave {incr ::x}
+	}
+	a
+	set x
+} {2}
+
+test onleave-1.11 {onleave through tailcall} {
+	set x {}
+	proc a {} {
+		onleave {append ::x a}
+		b
+	}
+	proc b {} {
+		onleave {append ::x b}
+		# c will be invoked as through called from a but this
+		# won't make any difference for onleave
+		tailcall c
+	}
+	proc c {} {
+		onleave {append ::x c}
+	}
+	a
+	set x
+} {bca}
+
+test onleave-1.12 {onleave in recursive call} {
+	set x {}
+	proc a {n} {
+		# onleave happens just before the return, so after the recursive call to a
+		onleave {lappend ::x $n}
+		if {$n > 0} {
+			a $($n - 1)
+		}
+	}
+	a 3
+	set x
+} {0 1 2 3}
+
+test onleave-1.13 {onleave in recursive tailcall} {
+	set x {}
+	proc a {n} {
+		# onleave happens just before the return, so before the tailcall to a
+		onleave {lappend ::x $n}
+		if {$n > 0} {
+			tailcall a $($n - 1)
+		}
+	}
+	a 3
+	set x
+} {3 2 1 0}
+
+test onleave-2.1 {onleave from interp} -body {
+	set i [interp]
+	# onleave needs to have some effect to detect on exit,
+	# so write to a file
+	file delete onleave.tmp
+	$i eval {
+		onleave {
+			[open onleave.tmp w] puts "leaving child"
+		}
+	}
+	set a [file exists onleave.tmp]
+	$i delete
+	# Now the file should exist
+	set f [open onleave.tmp]
+	$f gets b
+	$f close
+	list $a $b
+} -result {0 {leaving child}} -cleanup {
+	file delete onleave.tmp
+}
+
+test onleave-3.1 {onleave in namespace eval} namespace {
+	set x 1
+	namespace eval foo {
+		variable x
+		set x 10
+		# This will increment foo::x
+		onleave {incr x}
+	}
+	list $x $foo::x
+} {1 11}
+
+testreport
