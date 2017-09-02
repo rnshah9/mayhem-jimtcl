@@ -217,7 +217,7 @@ proc test {id descr args} {
 		}
 	}
 
-	if {[info return $rc] ni $a(-returnCodes) && $rc ni $a(-returnCodes)} {
+	if {[info return $rc] ni [string tolower $a(-returnCodes)] && $rc ni $a(-returnCodes)} {
 		set ok 0
 		set expected "rc=$a(-returnCodes) result=$a(-result)"
 		set result "rc=[info return $rc] result=$result"
@@ -264,6 +264,9 @@ proc test {id descr args} {
 proc ::tcltest::cleanupTests {} {
 	file delete [temporaryDirectory]
 	tailcall testreport
+}
+proc testsuiteCleanup {} {
+	tailcall ::tcltest::cleanupTests
 }
 
 proc testreport {} {
