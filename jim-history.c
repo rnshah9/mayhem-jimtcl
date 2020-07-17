@@ -37,7 +37,9 @@ static int history_cmd_getline(Jim_Interp *interp, int argc, Jim_Obj *const *arg
 
 static int history_cmd_setcompletion(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-    Jim_HistorySetCompletion(interp, Jim_Length(argv[0]) ? argv[0] : NULL);
+    Jim_HistorySetCompletion(interp,
+        Jim_Length(argv[0]) ? argv[0] : NULL,
+        Jim_Length(argv[1]) ? argv[1] : NULL);
     return JIM_OK;
 }
 
@@ -74,10 +76,10 @@ static const jim_subcmd_type history_command_table[] = {
         /* Description: Reads one line from the user. Similar to gets. */
     },
     {   "completion",
-        "command",
+        "comp_command hints_command",
         history_cmd_setcompletion,
-        1,
-        1,
+        2,
+        2,
         /* Description: Sets an autocompletion callback command, or none if "" */
     },
     {   "load",
