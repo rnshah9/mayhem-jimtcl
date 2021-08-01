@@ -97,6 +97,17 @@ test try-1.9 "return -code from within try" {
 	list [catch a msg] $msg
 } {3 text}
 
+test try-1.10 "try ... trap" -body {
+	proc a {} {
+		return -code error -errorcode {CUSTOM RESULT} "custom errorcode"
+	}
+	try {
+		a
+	} trap CUSTOM {msg opts} {
+		list $msg $opts(-code) $opts(-errorcode)
+	}
+} -result {{custom errorcode} 1 {CUSTOM RESULT}}
+
 proc c {} {
 	try {
 		error here
