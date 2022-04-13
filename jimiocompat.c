@@ -121,7 +121,7 @@ int Jim_MakeTempFile(Jim_Interp *interp, const char *filename_template, int unli
     }
 
     Jim_SetResultString(interp, name, -1);
-    return _open_osfhandle((int)handle, _O_RDWR | _O_TEXT);
+    return _open_osfhandle((intptr_t)handle, _O_RDWR | _O_TEXT);
 
   error:
     Jim_SetResultErrno(interp, name);

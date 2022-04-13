@@ -46,6 +46,8 @@ int Jim_OpenForRead(const char *filename);
     /* Note that this isn't a separate value on Windows since we don't have os.fork */
     #define JIM_NO_PID INVALID_HANDLE_VALUE
 
+    #define JimProcessPid(PIDTYPE) GetProcessId(PIDTYPE)
+
     /* These seem to accord with the conventions used by msys/mingw32 */
     #define WIFEXITED(STATUS) (((STATUS) & 0xff00) == 0)
     #define WEXITSTATUS(STATUS) ((STATUS) & 0x00ff)
@@ -68,6 +70,8 @@ int Jim_OpenForRead(const char *filename);
 #else
     typedef struct stat jim_stat_t;
     #define Jim_Stat stat
+
+    #define JimProcessPid(PIDTYPE) (PIDTYPE)
 
     #if defined(HAVE_UNISTD_H)
         #include <unistd.h>

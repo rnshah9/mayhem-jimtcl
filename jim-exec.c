@@ -236,12 +236,12 @@ static Jim_Obj *JimMakeErrorCode(Jim_Interp *interp, pidtype pid, int waitStatus
 
     if (pid == JIM_BAD_PID || pid == JIM_NO_PID) {
         Jim_ListAppendElement(interp, errorCode, Jim_NewStringObj(interp, "NONE", -1));
-        Jim_ListAppendElement(interp, errorCode, Jim_NewIntObj(interp, (long)pid));
+        Jim_ListAppendElement(interp, errorCode, Jim_NewIntObj(interp, JimProcessPid(pid)));
         Jim_ListAppendElement(interp, errorCode, Jim_NewIntObj(interp, -1));
     }
     else if (WIFEXITED(waitStatus)) {
         Jim_ListAppendElement(interp, errorCode, Jim_NewStringObj(interp, "CHILDSTATUS", -1));
-        Jim_ListAppendElement(interp, errorCode, Jim_NewIntObj(interp, (long)pid));
+        Jim_ListAppendElement(interp, errorCode, Jim_NewIntObj(interp, JimProcessPid(pid)));
         Jim_ListAppendElement(interp, errorCode, Jim_NewIntObj(interp, WEXITSTATUS(waitStatus)));
     }
     else {
@@ -269,7 +269,7 @@ static Jim_Obj *JimMakeErrorCode(Jim_Interp *interp, pidtype pid, int waitStatus
             Jim_AppendStrings(interp, errStrObj, "child ", action, " by signal ", Jim_SignalId(WTERMSIG(waitStatus)), "\n", NULL);
         }
 
-        Jim_ListAppendElement(interp, errorCode, Jim_NewIntObj(interp, (long)pid));
+        Jim_ListAppendElement(interp, errorCode, Jim_NewIntObj(interp, JimProcessPid(pid)));
         Jim_ListAppendElement(interp, errorCode, Jim_NewStringObj(interp, signame, -1));
     }
     return errorCode;
