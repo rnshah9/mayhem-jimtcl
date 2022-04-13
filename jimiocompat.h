@@ -46,7 +46,7 @@ int Jim_OpenForRead(const char *filename);
     /* Note that this isn't a separate value on Windows since we don't have os.fork */
     #define JIM_NO_PID INVALID_HANDLE_VALUE
 
-    #define JimProcessPid(PIDTYPE) GetProcessId(PIDTYPE)
+    #define JimProcessPid(PIDTYPE) ((PIDTYPE) == JIM_BAD_PID ? -1 : GetProcessId(PIDTYPE))
 
     /* These seem to accord with the conventions used by msys/mingw32 */
     #define WIFEXITED(STATUS) (((STATUS) & 0xff00) == 0)
