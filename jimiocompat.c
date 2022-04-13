@@ -101,7 +101,7 @@ long JimProcessPid(pidtype pid)
 /* waitpid() that takes a processid rather than a handle */
 pidtype JimWaitPid(long processid, int *status, int nohang)
 {
-    HANDLE h = OpenProcess(SYNCHRONIZE, FALSE, processid);
+    HANDLE h = OpenProcess(PROCESS_QUERY_INFORMATION | SYNCHRONIZE, FALSE, processid);
     if (h) {
         pidtype result = waitpid(h, status, nohang);
         CloseHandle(h);
