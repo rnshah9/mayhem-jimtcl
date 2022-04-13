@@ -90,6 +90,18 @@ int Jim_Errno(void)
     return EINVAL;
 }
 
+/* waitpid() that takes a processid rather than a handle */
+pidtype JimWaitPid(long processid, int *status, int nohang)
+{
+    pidtype result = INVALID_HANDLE_VALUE;
+    HANDLE h = OpenProcess(SYNCHRONIZE, FALSE, processid);
+    if (h != INVALID_HANDLE_VALUE) {
+        result = waitpid(h, status, nohang);
+        CloseHandle(h);
+    }
+    return result;
+}
+
 pidtype waitpid(pidtype pid, int *status, int nohang)
 {
     DWORD ret = WaitForSingleObject(pid, nohang ? 0 : INFINITE);

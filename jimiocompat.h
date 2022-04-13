@@ -60,6 +60,8 @@ int Jim_OpenForRead(const char *filename);
      */
     int Jim_Errno(void);
     pidtype waitpid(pidtype pid, int *status, int nohang);
+    /* waitpid() that takes a processid rather than a handle */
+    pidtype JimWaitPid(long processid, int *status, int nohang);
 
     #define HAVE_PIPE
     #define pipe(P) _pipe((P), 0, O_NOINHERIT)
@@ -71,8 +73,6 @@ int Jim_OpenForRead(const char *filename);
     typedef struct stat jim_stat_t;
     #define Jim_Stat stat
 
-    #define JimProcessPid(PIDTYPE) (PIDTYPE)
-
     #if defined(HAVE_UNISTD_H)
         #include <unistd.h>
         #include <fcntl.h>
@@ -82,6 +82,8 @@ int Jim_OpenForRead(const char *filename);
         #define Jim_Errno() errno
         #define JIM_BAD_PID -1
         #define JIM_NO_PID 0
+        #define JimProcessPid(PIDTYPE) (PIDTYPE)
+        #define JimWaitPid waitpid
 
         #ifndef HAVE_EXECVPE
             #define execvpe(ARG0, ARGV, ENV) execvp(ARG0, ARGV)

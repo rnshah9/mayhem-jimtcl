@@ -398,7 +398,7 @@ static int Jim_ExecCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
         /* The return value is a list of the pids */
         listObj = Jim_NewListObj(interp, NULL, 0);
         for (i = 0; i < numPids; i++) {
-            Jim_ListAppendElement(interp, listObj, Jim_NewIntObj(interp, (long)pidPtr[i]));
+            Jim_ListAppendElement(interp, listObj, Jim_NewIntObj(interp, JimProcessPid(pidPtr[i])));
         }
         Jim_SetResult(interp, listObj);
         JimDetachPids(table, numPids, pidPtr);
@@ -610,7 +610,8 @@ static int Jim_WaitCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
         return JIM_ERR;
     }
 
-    pid = waitpid((pidtype)pidarg, &status, nohang ? WNOHANG : 0);
+    /* On Windows a processId is passed here, but a process handle is needed for waitpid */
+    pid = JimWaitPid(pidarg, &status, nohang ? WNOHANG : 0);
 
     errCodeObj = JimMakeErrorCode(interp, pid, status, NULL);
 
