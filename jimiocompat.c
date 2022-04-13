@@ -90,16 +90,24 @@ int Jim_Errno(void)
     return EINVAL;
 }
 
+long JimProcessPid(pidtype pid)
+{
+    if (pid == INVALID_HANDLE_VALUE) {
+        return -1;
+    }
+    return GetProcessId(pid);
+}
+
 /* waitpid() that takes a processid rather than a handle */
 pidtype JimWaitPid(long processid, int *status, int nohang)
 {
-    pidtype result = INVALID_HANDLE_VALUE;
     HANDLE h = OpenProcess(SYNCHRONIZE, FALSE, processid);
-    if (h != INVALID_HANDLE_VALUE) {
-        result = waitpid(h, status, nohang);
+    if (h) {
+        pidtype result = waitpid(h, status, nohang);
         CloseHandle(h);
+        return result;
     }
-    return result;
+    return INVALID_HANDLE_VALUE;
 }
 
 pidtype waitpid(pidtype pid, int *status, int nohang)

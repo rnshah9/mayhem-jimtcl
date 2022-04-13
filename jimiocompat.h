@@ -46,8 +46,6 @@ int Jim_OpenForRead(const char *filename);
     /* Note that this isn't a separate value on Windows since we don't have os.fork */
     #define JIM_NO_PID INVALID_HANDLE_VALUE
 
-    #define JimProcessPid(PIDTYPE) ((PIDTYPE) == JIM_BAD_PID ? -1 : GetProcessId(PIDTYPE))
-
     /* These seem to accord with the conventions used by msys/mingw32 */
     #define WIFEXITED(STATUS) (((STATUS) & 0xff00) == 0)
     #define WEXITSTATUS(STATUS) ((STATUS) & 0x00ff)
@@ -62,6 +60,7 @@ int Jim_OpenForRead(const char *filename);
     pidtype waitpid(pidtype pid, int *status, int nohang);
     /* waitpid() that takes a processid rather than a handle */
     pidtype JimWaitPid(long processid, int *status, int nohang);
+    long JimProcessPid(pidtype pid);
 
     #define HAVE_PIPE
     #define pipe(P) _pipe((P), 0, O_NOINHERIT)
