@@ -90,36 +90,41 @@ int Jim_Errno(void)
     return EINVAL;
 }
 
-long JimProcessPid(pidtype pid)
+long JimProcessPid(phandle_t pid)
 {
     if (pid == INVALID_HANDLE_VALUE) {
         return -1;
     }
+    printf("%s: GetProcessId(%p) = %ld\n", __func__, pid, GetProcessId(pid));
     return GetProcessId(pid);
 }
 
-/* waitpid() that takes a processid rather than a handle */
-pidtype JimWaitPid(long processid, int *status, int nohang)
+phandle_t JimWaitPid(long processid, int *status, int nohang)
 {
     HANDLE h = OpenProcess(PROCESS_QUERY_INFORMATION | SYNCHRONIZE, FALSE, processid);
     if (h) {
-        pidtype result = waitpid(h, status, nohang);
+        long pid = waitpid(h, status, nohang);
         CloseHandle(h);
-        return result;
+        if (pid > 0) {
+            return h;
+        }
     }
-    return INVALID_HANDLE_VALUE;
+    return JIM_BAD_PHANDLE;
 }
 
-pidtype waitpid(pidtype pid, int *status, int nohang)
+long waitpid(phandle_t phandle, int *status, int nohang)
 {
-    DWORD ret = WaitForSingleObject(pid, nohang ? 0 : INFINITE);
+    long pid;
+    DWORD ret = WaitForSingleObject(phandle, nohang ? 0 : INFINITE);
     if (ret == WAIT_TIMEOUT || ret == WAIT_FAILED) {
         /* WAIT_TIMEOUT can only happend with WNOHANG */
-        return JIM_BAD_PID;
+        return -1;
     }
-    GetExitCodeProcess(pid, &ret);
+    GetExitCodeProcess(phandle, &ret);
     *status = ret;
-    CloseHandle(pid);
+    /* We won't be able to get this after we close the handle */
+    pid = GetProcessId(phandle);
+    CloseHandle(phandle);
     return pid;
 }
 

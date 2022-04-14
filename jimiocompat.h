@@ -41,10 +41,8 @@ int Jim_OpenForRead(const char *filename);
     #include <io.h>
     #include <process.h>
 
-    typedef HANDLE pidtype;
-    #define JIM_BAD_PID INVALID_HANDLE_VALUE
-    /* Note that this isn't a separate value on Windows since we don't have os.fork */
-    #define JIM_NO_PID INVALID_HANDLE_VALUE
+    typedef HANDLE phandle_t;
+    #define JIM_BAD_PHANDLE INVALID_HANDLE_VALUE
 
     /* These seem to accord with the conventions used by msys/mingw32 */
     #define WIFEXITED(STATUS) (((STATUS) & 0xff00) == 0)
@@ -57,10 +55,12 @@ int Jim_OpenForRead(const char *filename);
      * Unix-compatible errno
      */
     int Jim_Errno(void);
-    pidtype waitpid(pidtype pid, int *status, int nohang);
-    /* waitpid() that takes a processid rather than a handle */
-    pidtype JimWaitPid(long processid, int *status, int nohang);
-    long JimProcessPid(pidtype pid);
+
+    long waitpid(phandle_t phandle, int *status, int nohang);
+    /* Like waitpid() but takes a pid and returns a phandle */
+    phandle_t JimWaitPid(long processid, int *status, int nohang);
+    /* Return pid for a phandle */
+    long JimProcessPid(phandle_t phandle);
 
     #define HAVE_PIPE
     #define pipe(P) _pipe((P), 0, O_NOINHERIT)
@@ -77,10 +77,9 @@ int Jim_OpenForRead(const char *filename);
         #include <fcntl.h>
         #include <sys/wait.h>
 
-        typedef int pidtype;
+        typedef int phandle_t;
         #define Jim_Errno() errno
-        #define JIM_BAD_PID -1
-        #define JIM_NO_PID 0
+        #define JIM_BAD_PHANDLE -1
         #define JimProcessPid(PIDTYPE) (PIDTYPE)
         #define JimWaitPid waitpid
 
