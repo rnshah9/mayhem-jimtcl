@@ -1,0 +1,5 @@
+project: rnshah9/mayhem-jimtcl
+target: jimsh
+
+cmds:
+  - cmd: /repo/jimsh @@
