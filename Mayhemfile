@@ -2,4 +2,4 @@ project: jimtcl
 target: jimsh
 
 cmds:
-  - cmd: /repo/jimsh @@
+  - cmd: /install/bin/jimsh @@
